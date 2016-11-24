@@ -1,6 +1,12 @@
 import re
 from VulnerabilityPattern import *
 
+
+var_regex = "\$[a-zA-Z_]\w*"
+php_start_tag_regex = "<\?php\s*"
+php_end_tag_regex = "\?>"
+
+
 class Slice:
     def __init__(self, filePath, vp):
         self.vp = vp
@@ -10,37 +16,35 @@ class Slice:
         content = content_file.read()
         print(" "*61 + "\n" + "-"*23 + " slice content " + "-"*23 + "\n" + " "*61 + "\n" + "\n" + content)
         lines = content.split('\n')
-        atributionPatern = re.compile("\$([a-zA-Z_]\w*)\s*=\s*(.*?)$")
-        atribution_completed =[]
-        self.slice_order =[]
-        imcomplete = False
+        atributionPatern = re.compile(var_regex + "\s*=\s*.*$")
+        atribution_completed = []
+        self.slice_order = []
+        incomplete = False
 
         print(" " * 60 + "\n" + "-" * 23 + " parsing tree " + "-" * 23 + "\n" + " " * 60 + "\n")
         for line in lines:
-            if imcomplete:
-                new = atribution_completed[len(atribution_completed) - 1] +" " + line
-                atribution_completed.pop()
-                atribution_completed.append(new)
+            if incomplete:
+                new = atribution_completed[len(atribution_completed) - 1] + " " + line
+                atribution_completed[len(atribution_completed) - 1] = new
                 if line.endswith(';'):
-                    imcomplete = False
-                    self.slice_order.append(PHPatribution(new,self.identation+1, self.vp))
+                    incomplete = False
+                    self.slice_order.append(PHPatribution(new, self.identation + 1, self.vp))
 
             elif atributionPatern.match(line) != None:
                 if line.endswith(';'):
                     atribution_completed.append(line)
-                    self.slice_order.append(PHPatribution(line, self.identation+1, self.vp))
+                    self.slice_order.append(PHPatribution(line, self.identation + 1, self.vp))
                 else:
-                    imcomplete = True
+                    incomplete = True
                     atribution_completed.append(line)
-                    #slice_order.append(PHPatribution(line, self.identation+1))
 
             elif line.startswith('<') & line.endswith('>'):
                 atribution_completed.append(line)
-                self.slice_order.append(HTMLline(line, self.identation+1,self.vp))
+                self.slice_order.append(HTMLline(line, self.identation + 1, self.vp))
 
             elif IsSink(line, self.vp):
                 atribution_completed.append(line)
-                self.slice_order.append(Sink(line, self.identation+1,self.vp))
+                self.slice_order.append(Sink(line, self.identation + 1, self.vp))
 
 
 
@@ -63,20 +67,20 @@ def IsSink(line, vpatern):
 
 
 class var:
-    def __init__(self, name,integrity):
-        self.name = name;
+    def __init__(self, name, integrity):
+        self.name = name
         self.integrity = integrity
         print("var: " + name + "integrity: " + integrity)
 
 
 class PHPatribution:
-    def __init__(self, string,identation, vpatern):
-        print(identation*"\t" +"atribution: "+string)
+    def __init__(self, string, identation, vpatern):
+        print(identation*"\t" + "atribution: " + string)
         self.identation = identation
-        split = string.split("=",1);
-        self.left = PHPvar(split[0],identation+1, vpatern);
-        self.right = getRValueType(split[1],identation+1, vpatern);
 
+        split = string.split("=", 1)
+        self.left = PHPvar(split[0], identation + 1, vpatern)
+        self.right = getRValueType(split[1], identation + 1, vpatern)
 
     def process(self, vars, vpatern):
         integrity = self.right.process(vars, vpatern)
@@ -85,29 +89,22 @@ class PHPatribution:
         return integrity
 
 
-
 class HTMLline:
-    def __init__(self, string,identation,vpatern):
+    def __init__(self, string, identation, vpatern):
+        self.string = string
         self.identation = identation
-        print(identation * "\t" + "HTMLline: " + string)
         self.vars = []
+
+        print(identation * "\t" + "HTMLline: " + string)
         for sink in vpatern.sensitiveSinks:
-            """
-            if re.search("(.*?<\?php\s*" + sink + "\s*\$[a-z]\w*\s*.*?)", string) != None:
-                groups = re.findall("(.*?<\?php\s*" + sink + "\s*\$[a-z]\w*\s*.*?)", string)
+            if re.search(php_start_tag_regex + sink + "\s*\(?.*\)?.*" + php_end_tag_regex, string) != None:
+                groups = re.findall(php_start_tag_regex + sink + "\s*\(?.*\)?.*" + php_end_tag_regex, string)
                 for cut in groups:
-                    var = re.search(".*?<\?php\s*" + sink + "\s*(\$[a-z]\w*)\s*.*?", cut).groups()
-                    self.vars.append(PHPvar(var[0], identation + 1, vpatern))
-            """
-            if re.search("(<\?php\s*" + sink + "\s*\(?.*\)?.*\?>)", string) != None:
-                groups = re.findall("(<\?php\s*" + sink + "\s*\(?.*\)?.*\?>)", string)
-                for cut in groups:
-                    var = re.search("(<\?php\s*" + sink + "\s*\(?.*\)?.*\?>)", cut).groups()
-                    self.vars.append(PHPvar(var[0], identation + 1, vpatern))
+                    var = re.search(php_start_tag_regex + sink + "\s*\(?.*\)?.*" + php_end_tag_regex, cut).groups()
+                    if len(var) > 0:
+                        self.vars.append(PHPvar(var[0], identation + 1, vpatern))
 
-        self.string = string;
-
-    def process(self, vars,vpatern):
+    def process(self, vars, vpatern):
         for var in self.vars:
             if vars.get(var.name) != None:
                 if vars.get(var.name) == "low":
@@ -115,75 +112,58 @@ class HTMLline:
                     return "low"
         return "high"
 
-class SQLsink:
-    def __init__(self, string,identation,vpatern):
-        self.identation = identation
-        print(self.identation * "\t" + "SQLsink: " + string)
-        self.string = string;
-        self.vars = []
-
-        groups = re.findall("\s*(\$[a-z]\w*)\s*", string)
-        for cut in groups:
-            self.vars.append(PHPvar(cut, identation + 1,vpatern))
-
-    def process(self, vars,vpatern):
-        integrity = "high"
-        for var in self.vars:
-            if vars.get(var.name) != None:
-                if vars.get(var.name) == "low":
-                    print("X--> SQLI in " + self.string + " because of " + var.name)
-                    integrity = "low"
-        return integrity
 
 class Sink:
-    def __init__(self, string,identation,vpatern):
+    def __init__(self, string, identation, vpatern):
         self.identation = identation
         print(self.identation * "\t" + "Sink: " + string)
-        self.string = string;
+        self.string = string
         self.vars = []
-        self.entries =[]
+        self.entries = []
 
-        groups = re.findall("\s*(\$[a-z]\w*)\s*", string)
+        # TODO: Check the problem in the xss03 test
+        groups = re.findall(var_regex, string)
         for cut in groups:
-            self.vars.append(PHPvar(cut, identation + 1,vpatern))
+            self.vars.append(PHPvar(cut, identation + 1, vpatern))
 
-        #groups = re.findall("\s*(\$_[a-z]\w*)\s*", string)
+        # TODO: It may find other types of entries (some do not start with $)
         for entryType in vpatern.entryPoints:
-            groups = re.findall("\s*(\\"+ entryType +"\[['a-zA-Z0-9]*\])\s*", string)
+            groups = re.findall("\s*(\\" + entryType + "\[['a-zA-Z0-9]*\])\s*", string)
             for cut in groups:
-                self.entries.append(PHPentry(cut, identation+1, vpatern))
+                self.entries.append(PHPentry(cut, identation + 1, vpatern))
 
-
-    def process(self, vars,vpatern):
+    def process(self, vars, vpatern):
         integrity = "high"
         for var in self.vars:
-            if vars.get(var.name) != None:
-                if vars.get(var.name) == "low":
-                    print("X-->"+vpatern.vulnerabilityName+" in " + self.string + " because of " + var.name)
-                    integrity = "low"
+            integrity_value = vars.get(var.name)
+            if integrity_value == "low":
+                print("X-->" + vpatern.vulnerabilityName + " in " + self.string + " because of " + var.name)
+                integrity = "low"
+
+        # TODO: Check if this is really needed
         for entry in self.entries:
-            print("X--> "+vpatern.vulnerabilityName+" in " + self.string + " because of " + entry.string)
+            print("X--> " + vpatern.vulnerabilityName + " in " + self.string + " because of " + entry.string)
             integrity = "low"
         return integrity
 
 
-
 class PhpStrings:
-    def __init__(self, string,identation, vpatern):
+    def __init__(self, string, identation, vpatern):
         self.identation = identation
         print(identation * "\t" + "PhpStrings: " + string)
-        self.string = string;
+        self.string = string
         self.vars = []
         groups = re.findall("\s*\'(\$[a-z]\w*)\'\s*", string)
         for cut in groups:
             self.vars.append(PHPvar(cut, identation + 1, vpatern))
 
-    def process(self, vars,vpatern):
+    def process(self, vars, vpatern):
         for var in self.vars:
             if vars.get(var.name) != None:
                 if vars.get(var.name) == "low":
                     return "low"
         return "high"
+
 
 class Sanitization:
     def __init__(self, string, identation, vpatern):
@@ -226,7 +206,7 @@ class UnknownRValue:
     def process(self, vars,vpatern):
         return "high"
 
-"a"
+
 def getRValueType(string,identation,vpatern):
     str = string.strip()
 
