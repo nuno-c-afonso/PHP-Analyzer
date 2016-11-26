@@ -16,19 +16,8 @@ class Slice:
         content = content_file.read()
         print(" "*61 + "\n" + "-"*23 + " slice content " + "-"*23 + "\n" + " "*61 + "\n" + "\n" + content)
 
-        # TODO: This is only a test. Delete afterwards.
-        html = re.findall("<\?.*\?>", content)
-        for i in range(0, len(html)):
-            html[i] = re.sub("(<\?(php)?)|(\?>)", "", html[i])
-            html[i] = html[i].strip()
-
-        without_php_in_html = re.split("<\?.*\?>", content)
-        print("PHP CONTENT INSIDE HTML:")
-        for string in html:
-            print(string)
-        print("CONTENT WITHOUT THE PREVIOUS PHP CODE")
-        for string in without_php_in_html:
-            print(string)
+        with_parsed_html_php = split_html_php(content)
+        lines = split_by_lines(with_parsed_html_php)
 
         lines = content.split('\n')
         atributionPatern = re.compile(var_regex + "\s*=\s*.*$")
@@ -266,3 +255,42 @@ def get_entries_in_sink(string, identation, vpattern):
                 found = True
         if not found:
             vars.append(PHPvar(cut, identation + 1, vpattern))
+
+
+def split_html_php(content):
+    html_php = re.findall("<\?.*\?>", content)
+    size = len(html_php)
+    for i in range(0, size):
+        html_php[i] = re.sub("(<\?(php)?)|(\?>)", "", html_php[i])
+    without_php_in_html = re.split("<\?.*\?>", content)
+    return insert_parsed_php_code(html_php, without_php_in_html)
+
+
+def insert_parsed_php_code(split_php, without_html_php):
+    i = 0
+    j = 0
+    result = []
+    added_original_split = False
+    size = len(without_html_php)
+    while i < size:
+        if (i % 2 != 0) & (not added_original_split):
+            result.append(split_php[j])
+            j += 1
+            added_original_split = True
+            continue
+
+        added_original_split = False
+        result.append(without_html_php[i])
+        i += 1
+    return result
+
+
+def split_by_lines(with_parsed_html_php):
+    result = []
+    for string in with_parsed_html_php:
+        split = string.strip().split("\n")
+
+        for line in split:
+            if not(line.startswith("<") | line.endswith(">")):
+                result.append(line)
+    return result

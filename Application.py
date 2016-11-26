@@ -20,9 +20,9 @@ for file in files:
     for pattern in patterns:
 
         #TODO: Remove after debugging
-        #if pattern.vulnerabilityName == "Cross Site Scripting":
-        #    print("\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + pattern.vulnerabilityName + "#" * 23 + "\n" + "#" * 63 + "\n")
-        slices.append(Slice(path + file, pattern))
+        if pattern.vulnerabilityName == "Cross Site Scripting":
+            print("\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + pattern.vulnerabilityName + "#" * 23 + "\n" + "#" * 63 + "\n")
+            slices.append(Slice(path + file, pattern))
 
 #for slice in slices:
 #    slice.process()
