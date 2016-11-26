@@ -19,7 +19,6 @@ class Slice:
         with_parsed_html_php = split_html_php(content)
         lines = split_by_lines(with_parsed_html_php)
 
-        lines = content.split('\n')
         atributionPatern = re.compile(var_regex + "\s*=\s*.*$")
         atribution_completed = []
         self.slice_order = []
@@ -41,10 +40,6 @@ class Slice:
                 else:
                     incomplete = True
                     atribution_completed.append(line)
-
-            elif line.startswith('<') & line.endswith('>'):
-                atribution_completed.append(line)
-                self.slice_order.append(HTMLline(line, self.identation + 1, self.vp))
 
             elif IsSink(line, self.vp):
                 atribution_completed.append(line)
@@ -70,20 +65,13 @@ def IsSink(line, vpattern):
     return False
 
 
-class var:
-    def __init__(self, name, integrity):
-        self.name = name
-        self.integrity = integrity
-        print("var: " + name + "integrity: " + integrity)
-
-
 class PHPatribution:
     def __init__(self, string, identation, vpattern):
         print(identation*"\t" + "atribution: " + string)
         self.identation = identation
 
         split = string.split("=", 1)
-        self.left = PHPvar(split[0], identation + 1, vpattern)
+        self.left = PHPvar(split[0].strip(), identation + 1, vpattern)
         self.right = get_rvalue_type(split[1], identation + 1, vpattern)
 
     def process(self, vars, vpattern):
@@ -91,30 +79,6 @@ class PHPatribution:
         vars[self.left.name] = integrity
         print(vars)
         return integrity
-
-
-class HTMLline:
-    def __init__(self, string, identation, vpattern):
-        self.string = string
-        self.identation = identation
-        self.vars = []
-
-        print(identation * "\t" + "HTMLline: " + string)
-        for sink in vpattern.sensitiveSinks:
-            if re.search(php_start_tag_regex + sink + "\s*\(?.*\)?.*" + php_end_tag_regex, string) != None:
-                groups = re.findall(php_start_tag_regex + sink + "\s*\(?.*\)?.*" + php_end_tag_regex, string)
-                for cut in groups:
-                    var = re.search(php_start_tag_regex + sink + "\s*\(?.*\)?.*" + php_end_tag_regex, cut).groups()
-                    if len(var) > 0:
-                        self.vars.append(PHPvar(var[0], identation + 1, vpattern))
-
-    def process(self, vars, vpattern):
-        for var in self.vars:
-            if vars.get(var.name) != None:
-                if vars.get(var.name) == "low":
-                    print("X--> XSS in " + self.string + " because of " + var.name)
-                    return "low"
-        return "high"
 
 
 class Sink:
@@ -140,6 +104,7 @@ class Sink:
         integrity = "high"
         for var in self.vars:
             integrity_value = vars.get(var.name)
+
             if integrity_value == "low":
                 print("X-->" + vpattern.vulnerabilityName + " in " + self.string + " because of " + var.name)
                 integrity = "low"
