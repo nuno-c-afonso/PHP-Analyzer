@@ -70,6 +70,7 @@ class PHPatribution:
         print(identation*"\t" + "atribution: " + string)
         self.identation = identation
 
+        string = string.strip(";").strip()
         split = string.split("=", 1)
         self.left = PHPvar(split[0].strip(), identation + 1, vpattern)
         self.right = get_rvalue_type(split[1], identation + 1, vpattern)
@@ -85,6 +86,7 @@ class Sink:
     def __init__(self, string, identation, vpattern):
         self.identation = identation
         self.string = string.strip(";").strip()
+        self.instructionLine = self.string
         self.vars = []
         self.entries = []
         print(self.identation * "\t" + "Sink: " + self.string)
@@ -94,14 +96,14 @@ class Sink:
                 self.string = self.string.lstrip(sinkType)
                 break
 
-        self.vars = get_entries_in_sink(self.string, identation+1, vpattern)
+        self.vars = get_entries_in_sink(self.string, identation + 1, vpattern)
 
 
     def process(self, vars, vpattern):
         integrity = "high"
         for var in self.vars:
             if var.process(vars, vpattern) == "low":
-                print("X-->" + vpattern.vulnerabilityName + " in " + self.string + " because of " + var.string)
+                print("X-->" + vpattern.vulnerabilityName + " in: " + self.instructionLine + "\n\tbecause of: " + var.string)
                 integrity = "low"
 
         return integrity
