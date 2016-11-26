@@ -15,6 +15,21 @@ class Slice:
         content_file = open(filePath, 'r')
         content = content_file.read()
         print(" "*61 + "\n" + "-"*23 + " slice content " + "-"*23 + "\n" + " "*61 + "\n" + "\n" + content)
+
+        # TODO: This is only a test. Delete afterwards.
+        html = re.findall("<\?.*\?>", content)
+        for i in range(0, len(html)):
+            html[i] = re.sub("(<\?(php)?)|(\?>)", "", html[i])
+            html[i] = html[i].strip()
+
+        without_php_in_html = re.split("<\?.*\?>", content)
+        print("PHP CONTENT INSIDE HTML:")
+        for string in html:
+            print(string)
+        print("CONTENT WITHOUT THE PREVIOUS PHP CODE")
+        for string in without_php_in_html:
+            print(string)
+
         lines = content.split('\n')
         atributionPatern = re.compile(var_regex + "\s*=\s*.*$")
         atribution_completed = []
