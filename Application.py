@@ -1,7 +1,9 @@
 from PHPparser import *
 from VulnerabilityPattern import *
 import os
+import sys
 
+# TODO: Remove after debugging
 path = os.getcwd() + "/Slices/"
 print path
 
@@ -17,12 +19,23 @@ files = ["sqli_01.txt","sqli_02.txt","sqli_03.txt","sqli_04.txt","sqli_05.txt","
 filename = "PatternsTest.txt"
 patterns = patterns_from_file(filename)
 
+# FIXME: This should exist in the final version of the project (it is asked for in the course web page)
+"""
+if len(sys.argv) == 1:
+    print("Please give the name of the slice file as an argument.")
+
+else:
+    slice = sys.argv[1]
+    for pattern in patterns:
+        # TODO: Remove after debugging
+        print("\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + pattern.vulnerabilityName + "#" * 23 + "\n" + "#" * 63 + "\n")
+        Slice(slice, pattern)
+"""
 slices = []
 for file in files:
     print("\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + file + "#" * 23 + "\n" + "#" * 63 + "\n")
 
     for pattern in patterns:
         #TODO: Remove after debugging
-        #if pattern.vulnerabilityName == "Cross Site Scripting":
         print("\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + pattern.vulnerabilityName + "#" * 23 + "\n" + "#" * 63 + "\n")
         slices.append(Slice(path + file, pattern))
