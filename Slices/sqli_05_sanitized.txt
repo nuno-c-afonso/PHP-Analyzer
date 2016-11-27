@@ -1,0 +1,5 @@
+$matapelajaran=$_POST['matapelajaran'];
+$idmatapelajaran=$_POST['idmatapelajaran'];
+$edit_matapelajaran="UPDATE matapelajaran SET matapelajaran='$matapelajaran' WHERE id_matapelajaran='$idmatapelajaran'";
+$edit_matapelajaran=mysql_escape_string($edit_matapelajaran);
+mysql_query($edit_matapelajaran,$koneksi);

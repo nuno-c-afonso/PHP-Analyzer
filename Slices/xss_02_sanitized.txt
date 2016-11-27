@@ -1,0 +1,3 @@
+$firstname = $_POST['firstname'];
+$firstname=htmlentities($firstname);
+<td><input type="text" name="firstname" value="<?php echo $firstname; ?>"/></td>

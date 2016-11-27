@@ -1,0 +1,3 @@
+$self=$_SERVER["PHP_SELF"];
+$self=htmlentities($self);
+<form action="<?php echo $self?>" method="post">
