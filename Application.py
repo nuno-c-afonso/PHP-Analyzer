@@ -12,8 +12,8 @@ print path
         #"teste.txt" ]
 #files = ["xss_01.txt", "xss_02.txt", "xss_03.txt"]
 #files = ["xss_02.txt"]
-files = ["sqli_01.txt","sqli_02.txt","sqli_03.txt","sqli_04.txt","sqli_05.txt","xss_01.txt","xss_02.txt","xss_03.txt"]
-
+#files = ["sqli_01.txt","sqli_02.txt","sqli_03.txt","sqli_04.txt","sqli_05.txt","xss_01.txt","xss_02.txt","xss_03.txt"]
+files = ["sqli_website.txt"]
 
 #filename = raw_input("Please input the filename of the patterns' file (<enter> for the default option)\n> ").strip()
 #filename = "PatternsFile.txt"
