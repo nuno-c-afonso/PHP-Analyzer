@@ -186,7 +186,7 @@ class PHPvar:
     def process(self, vars, vpattern):
         if vars.get(self.string) != None:
             return vars.get(self.string)
-        return "low"
+        return "high"
 
 
 class UnknownRValue:
@@ -200,9 +200,9 @@ class UnknownRValue:
 
 
 def get_rvalue_type(string, identation, vpattern):
-    str = string.strip()
+    str = string.strip().strip(";").strip()
 
-    if str.startswith('\"') & str.endswith('\";'):
+    if str.startswith('\"') & str.endswith('\"'):
         return PhpStrings(str, identation, vpattern)
 
     # TODO: The specific types may not be at the start of the string. Maybe they are concatenated.
