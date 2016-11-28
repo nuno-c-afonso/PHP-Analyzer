@@ -6,7 +6,6 @@ var_regex = "\$[a-zA-Z_]\w*"
 php_start_tag_regex = "<\?php\s*"
 php_end_tag_regex = "\?>"
 
-
 def getPHPLines(content):
     d = ";"
     return [line + d for line in content.split(d) if line != ""]
@@ -27,8 +26,6 @@ class Slice:
         atributionPatern = re.compile(var_regex + "\s*=\s*.*$")
         self.slice_order = []
 
-        self.sinks = [] #same as slice_order ?? #FIXME
-
         print(" " * 60 + "\n" + "-" * 23 + " parsing tree " + "-" * 23 + "\n" + " " * 60 + "\n")
 
         for line in lines:
@@ -37,7 +34,6 @@ class Slice:
 
             elif IsSink(line, self.vp):
                 createdSink = Sink(line, self.identation + 1, self.vp)
-                self.sinks.append(createdSink)
                 self.slice_order.append(createdSink)
 
         print("\n")
@@ -51,16 +47,14 @@ class Slice:
             e.process(vars, self.vp)
 
     def isVulnerable(self):
-        for sink in self.sinks:
-            if sink.processed == True and sink.isVulnerable == 1: # FIXME: se calhar apenas verificar se a lista vulnList tem elementos
+        for sink_or_attr in self.slice_order:
+            if sink_or_attr.isVulnerable():
                 return True
         return False
 
     def printVulnerabilities(self):
-        for sink in self.sinks:
-            for vuln in sink.vulnList:
-                #print("X-->" + vpattern.vulnerabilityName + " in: " + self.instructionLine + "\n\tbecause of: " + var.string)
-                print("X-->" + vuln[0].vulnerabilityName + " in: " + vuln[1] + "\n\tbecause of: " + vuln[2])
+        for sink_or_attr in self.slice_order:
+            sink_or_attr.printVulnerabilities()
 
 
 
@@ -81,6 +75,14 @@ class PHPatribution:
         self.left = PHPvar(split[0].strip(), identation + 1, vpattern)
         self.right = get_rvalue_type(split[1], identation + 1, vpattern)
 
+    def isVulnerable(self):
+        if isinstance(self.right, Sink):
+            return self.right.isVulnerable()
+
+    def printVulnerabilities(self):
+        if isinstance(self.right, Sink):
+            return self.right.printVulnerabilities()
+
     def process(self, vars, vpattern):
         integrity = self.right.process(vars, vpattern)
         vars[self.left.string] = integrity
@@ -93,7 +95,7 @@ class Sink:
 
         self.processed = False
         self.vulnList = []
-        self.isVulnerable = -1;
+        self.vulnerableState = -1;
 
         self.identation = identation
         self.string = string.strip(";").strip()
@@ -109,15 +111,23 @@ class Sink:
 
         self.vars = get_entries_in_sink(self.string, identation + 1, vpattern)
 
+    def isVulnerable(self):
+        return self.processed == True and self.vulnerableState == 1
+
+    def printVulnerabilities(self):
+        for vuln in self.vulnList:
+            # print("X-->" + vpattern.vulnerabilityName + " in: " + self.instructionLine + "\n\tbecause of: " + var.string)
+            print("X-->" + vuln[0].vulnerabilityName + " in: " + vuln[1] + "\n\tbecause of: " + vuln[2])
+
     def process(self, vars, vpattern):
-        self.isVulnerable = 0
+        self.vulnerableState = 0
 
         integrity = "high"
         for var in self.vars:
             if var.process(vars, vpattern) == "low":
                 print("X-->" + vpattern.vulnerabilityName + " in: " + self.instructionLine + "\n\tbecause of: " + var.string)
                 integrity = "low"
-                self.isVulnerable = 1
+                self.vulnerableState = 1
                 self.vulnList.append([vpattern, self.instructionLine, var.string])
 
         self.processed = True
@@ -213,7 +223,7 @@ def get_rvalue_type(string, identation, vpattern):
 
     return UnknownRValue(str, identation, vpattern)
 
-
+"""
 def get_vars(string, identation, vpattern):
     str = string.strip()
 
@@ -235,7 +245,7 @@ def get_vars(string, identation, vpattern):
 
     if str.startswith("$"):
         return PHPvar(str, identation, vpattern)
-
+"""
 
 def get_entries_in_sink(string, identation, vpattern):
     #print("get_entries_in_sink "+ string)

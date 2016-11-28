@@ -11,8 +11,8 @@ print path
 #files = ["sqli_01_sanitized.txt","sqli_02_sanitized.txt","sqli_03_sanitized.txt","sqli_04_sanitized.txt","sqli_05_sanitized.txt","xss_01_sanitized.txt","xss_02_sanitized.txt","xss_03_sanitized.txt"]#,
         #"teste.txt" ]
 #files = ["xss_01.txt", "xss_02.txt", "xss_03.txt"]
-files = ["xss_02.txt"]
-#files = ["sqli_01.txt","sqli_02.txt","sqli_03.txt","sqli_04.txt","sqli_05.txt","xss_01.txt","xss_02.txt","xss_03.txt"]
+#files = ["xss_02.txt"]
+files = ["sqli_01.txt","sqli_02.txt","sqli_03.txt","sqli_04.txt","sqli_05.txt","xss_01.txt","xss_02.txt","xss_03.txt"]
 
 
 #filename = raw_input("Please input the filename of the patterns' file (<enter> for the default option)\n> ").strip()
@@ -42,10 +42,12 @@ for file in files:
         slices.append(Slice(path + file, pattern))
 
 
+
 #FIXME TODO dizer tambem qual o vpattern ao certo que a detectou ?
 # apenas diz o nome do ficheiro e qual a vulnerabilidade
 for slice in slices:
     if slice.isVulnerable():
         print slice.name + " | this slice is vulnerable: "
         slice.printVulnerabilities() #TODO fazer print dentro da funcao ou fora ?
+        print "\n"
 
