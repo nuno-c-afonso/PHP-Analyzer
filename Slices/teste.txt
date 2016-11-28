@@ -1,4 +1,3 @@
-<?
 $id_nilai=$_GET['idn'];
 $firstname=$_GET['idn'];
 $q_nilai="SELECT * FROM nilai INNER JOIN matapelajaran ON 
@@ -6,5 +5,5 @@ matapelajaran.id_matapelajaran = nilai.id_matapelajaran INNER JOIN siswa ON sisw
 INNER JOIN kelas ON kelas.id_kelas=nilai.id_kelas
 WHERE id_nilai='$id_nilai'";
 $hasil=mysql_query($q_nilai,$koneksi);
-<td><input type="text" name="firstname" value="<?php echo $firstname; ?>"/><input type="text" name="lastname" value="<?php echo $lastname; ?>"/></td>
-?>
+<td><input type="text" name="firstname" value="<?php echo $firstname; ?>"/>
+<input type="text" name="lastname" value="<?php echo $lastname; ?>"/></td>

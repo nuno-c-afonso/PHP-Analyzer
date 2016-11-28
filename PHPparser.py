@@ -202,7 +202,7 @@ class UnknownRValue:
 def get_rvalue_type(string, identation, vpattern):
     str = string.strip().strip(";").strip()
 
-    if str.startswith('\"') & str.endswith('\"'):
+    if str.startswith('\"') and str.endswith('\"'):
         return PhpStrings(str, identation, vpattern)
 
     # TODO: The specific types may not be at the start of the string. Maybe they are concatenated.
@@ -238,7 +238,7 @@ def get_entries_in_sink(string, identation, vpattern):
         # print("line: "+line)
         str = line.strip()
 
-        if str.startswith('\"') & str.endswith('\";'):
+        if str.startswith('\"') and str.endswith('\"'):
             vars.append(PhpStrings(str, identation, vpattern))
 
         if mach != True:
@@ -259,7 +259,7 @@ def get_entries_in_sink(string, identation, vpattern):
                     vars.append(Sink(str, identation, vpattern))
                     mach = True
 
-        if mach != True & str.startswith("$"):
+        if mach != True and str.startswith("$"):
             vars.append(PHPvar(str, identation, vpattern))
 
     return vars
@@ -299,7 +299,7 @@ def split_by_lines(content):
     lines = content.split("\n")
     for line in lines:
         line = line.strip()
-        if not (line.startswith("<") | line.endswith(">")):
+        if not (line.startswith("<") or line.endswith(">")):
             result.append(line)
 
     return result
