@@ -7,6 +7,10 @@ php_start_tag_regex = "<\?php\s*"
 php_end_tag_regex = "\?>"
 
 
+def getPHPLines(content):
+    d = ";"
+    return [line + d for line in content.split(d) if line != ""]
+
 class Slice:
     def __init__(self, filePath, vp):
         self.vp = vp
@@ -17,35 +21,20 @@ class Slice:
         print(" "*61 + "\n" + "-"*23 + " slice content " + "-"*23 + "\n" + " "*61 + "\n" + "\n" + content)
 
         content = sub_html_php(content)
-        lines = split_by_lines(content)
+        lines = getPHPLines(content.replace('\n', '').replace('\r', ''))
 
         atributionPatern = re.compile(var_regex + "\s*=\s*.*$")
-        atribution_completed = []
         self.slice_order = []
-        incomplete = False
+        self.slice_order_test2 = []
 
         print(" " * 60 + "\n" + "-" * 23 + " parsing tree " + "-" * 23 + "\n" + " " * 60 + "\n")
-        for line in lines:
-            if incomplete:
-                new = atribution_completed[len(atribution_completed) - 1] + " " + line
-                atribution_completed[len(atribution_completed) - 1] = new
-                if line.endswith(';'):
-                    incomplete = False
-                    self.slice_order.append(PHPatribution(new, self.identation + 1, self.vp))
 
-            elif atributionPatern.match(line) != None:
-                if line.endswith(';'):
-                    atribution_completed.append(line)
-                    self.slice_order.append(PHPatribution(line, self.identation + 1, self.vp))
-                else:
-                    incomplete = True
-                    atribution_completed.append(line)
+        for line in lines:
+            if atributionPatern.match(line) != None:
+                self.slice_order_test2.append(PHPatribution(line, self.identation + 1, self.vp))
 
             elif IsSink(line, self.vp):
-                atribution_completed.append(line)
-                self.slice_order.append(Sink(line, self.identation + 1, self.vp))
-
-
+                self.slice_order_test2.append(Sink(line, self.identation + 1, self.vp))
 
         print("\n")
         self.process()
@@ -261,8 +250,9 @@ def get_entries_in_sink(string, identation, vpattern):
 
 
 def sub_html_php(content):
-    print("INITIAL CONTENT:")
-    print(content)
+    content_inicial = content
+    #print("INITIAL CONTENT:")
+    #print(content)
 
     html_php = re.search("<\?.*\?>", content)
     while html_php:
@@ -274,8 +264,16 @@ def sub_html_php(content):
         content = re.sub("<.*>", html_php, content, 1)
         html_php = re.search("<\?.*\?>", content)
 
-    print("END CONTENT:")
-    print(content)
+    #print("END CONTENT:")
+    #print(content)
+    if content_inicial != content:
+        print("INITIAL CONTENT:")
+        print(content_inicial)
+
+        print("END CONTENT:")
+        print(content)
+    else:
+        print("sub_html_php: did nothing")
 
     return content
 
