@@ -40,3 +40,12 @@ for file in files:
         #TODO: Remove after debugging
         print("\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + pattern.vulnerabilityName + "#" * 23 + "\n" + "#" * 63 + "\n")
         slices.append(Slice(path + file, pattern))
+
+
+#FIXME TODO dizer tambem qual o vpattern ao certo que a detectou ?
+# apenas diz o nome do ficheiro e qual a vulnerabilidade
+for slice in slices:
+    if slice.isVulnerable():
+        print slice.name + " | this slice is vulnerable: "
+        slice.printVulnerabilities() #TODO fazer print dentro da funcao ou fora ?
+

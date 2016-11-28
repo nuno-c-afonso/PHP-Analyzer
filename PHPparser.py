@@ -14,6 +14,7 @@ def getPHPLines(content):
 class Slice:
     def __init__(self, filePath, vp):
         self.vp = vp
+        self.name = filePath
 
         self.identation = 0
         content_file = open(filePath, 'r')
@@ -25,16 +26,19 @@ class Slice:
 
         atributionPatern = re.compile(var_regex + "\s*=\s*.*$")
         self.slice_order = []
-        self.slice_order_test2 = []
+
+        self.sinks = [] #same as slice_order ?? #FIXME
 
         print(" " * 60 + "\n" + "-" * 23 + " parsing tree " + "-" * 23 + "\n" + " " * 60 + "\n")
 
         for line in lines:
             if atributionPatern.match(line) != None:
-                self.slice_order_test2.append(PHPatribution(line, self.identation + 1, self.vp))
+                self.slice_order.append(PHPatribution(line, self.identation + 1, self.vp))
 
             elif IsSink(line, self.vp):
-                self.slice_order_test2.append(Sink(line, self.identation + 1, self.vp))
+                createdSink = Sink(line, self.identation + 1, self.vp)
+                self.sinks.append(createdSink)
+                self.slice_order.append(createdSink)
 
         print("\n")
         self.process()
@@ -45,6 +49,19 @@ class Slice:
         vars = {}#this is a dictionary
         for e in self.slice_order:
             e.process(vars, self.vp)
+
+    def isVulnerable(self):
+        for sink in self.sinks:
+            if sink.processed == True and sink.isVulnerable == 1: # FIXME: se calhar apenas verificar se a lista vulnList tem elementos
+                return True
+        return False
+
+    def printVulnerabilities(self):
+        for sink in self.sinks:
+            for vuln in sink.vulnList:
+                #print("X-->" + vpattern.vulnerabilityName + " in: " + self.instructionLine + "\n\tbecause of: " + var.string)
+                print("X-->" + vuln[0].vulnerabilityName + " in: " + vuln[1] + "\n\tbecause of: " + vuln[2])
+
 
 
 def IsSink(line, vpattern):
@@ -73,6 +90,11 @@ class PHPatribution:
 
 class Sink:
     def __init__(self, string, identation, vpattern):
+
+        self.processed = False
+        self.vulnList = []
+        self.isVulnerable = -1;
+
         self.identation = identation
         self.string = string.strip(";").strip()
         self.instructionLine = self.string
@@ -87,14 +109,18 @@ class Sink:
 
         self.vars = get_entries_in_sink(self.string, identation + 1, vpattern)
 
-
     def process(self, vars, vpattern):
+        self.isVulnerable = 0
+
         integrity = "high"
         for var in self.vars:
             if var.process(vars, vpattern) == "low":
                 print("X-->" + vpattern.vulnerabilityName + " in: " + self.instructionLine + "\n\tbecause of: " + var.string)
                 integrity = "low"
+                self.isVulnerable = 1
+                self.vulnList.append([vpattern, self.instructionLine, var.string])
 
+        self.processed = True
         return integrity
 
 
