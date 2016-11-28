@@ -5,20 +5,21 @@ from VulnerabilityPattern import *
 var_regex = "\$[a-zA-Z_]\w*"
 php_start_tag_regex = "<\?php\s*"
 php_end_tag_regex = "\?>"
+debugging = False
 
 def getPHPLines(content):
     d = ";"
     return [line + d for line in content.split(d) if line != ""]
 
 class Slice:
-    def __init__(self, filePath, vp):
+    def __init__(self, filePath, content, vp):
         self.vp = vp
         self.name = filePath
-
         self.identation = 0
-        content_file = open(filePath, 'r')
-        content = content_file.read()
-        print(" "*61 + "\n" + "-"*23 + " slice content " + "-"*23 + "\n" + " "*61 + "\n" + "\n" + content)
+
+        if debugging:
+            print("\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + vp.vulnerabilityName + "#" * 23 + "\n" + "#" * 63 + "\n")
+            print(" "*61 + "\n" + "-"*23 + " slice content " + "-"*23 + "\n" + " "*61 + "\n" + "\n" + content)
 
         content = sub_html_php(content)
         lines = getPHPLines(content.replace('\n', '').replace('\r', ''))
@@ -26,7 +27,8 @@ class Slice:
         atributionPatern = re.compile(var_regex + "\s*=\s*.*$")
         self.slice_order = []
 
-        print(" " * 60 + "\n" + "-" * 23 + " parsing tree " + "-" * 23 + "\n" + " " * 60 + "\n")
+        if debugging:
+            print(" " * 60 + "\n" + "-" * 23 + " parsing tree " + "-" * 23 + "\n" + " " * 60 + "\n")
 
         for line in lines:
             if atributionPatern.match(line) != None:
@@ -36,12 +38,12 @@ class Slice:
                 createdSink = Sink(line, self.identation + 1, self.vp)
                 self.slice_order.append(createdSink)
 
-        print("\n")
         self.process()
-        print("\n")
+
 
     def process(self):
-        print(" " * 63 + "\n" + "-" * 23 + " tree processing " + "-" * 23 + "\n" + " " * 63 + "\n")
+        if debugging:
+            print(" " * 63 + "\n" + "-" * 23 + " tree processing " + "-" * 23 + "\n" + " " * 63 + "\n")
         vars = {}#this is a dictionary
         for e in self.slice_order:
             e.process(vars, self.vp)
@@ -67,7 +69,8 @@ def IsSink(line, vpattern):
 
 class PHPatribution:
     def __init__(self, string, identation, vpattern):
-        print(identation*"\t" + "atribution: " + string)
+        if debugging:
+            print(identation*"\t" + "atribution: " + string)
         self.identation = identation
 
         string = string.strip(";").strip()
@@ -86,7 +89,8 @@ class PHPatribution:
     def process(self, vars, vpattern):
         integrity = self.right.process(vars, vpattern)
         vars[self.left.string] = integrity
-        print(vars)
+        if debugging:
+            print(vars)
         return integrity
 
 
@@ -102,7 +106,8 @@ class Sink:
         self.instructionLine = self.string
         self.vars = []
         self.entries = []
-        print(self.identation * "\t" + "Sink: " + self.string)
+        if debugging:
+            print(self.identation * "\t" + "Sink: " + self.string)
 
         for sinkType in vpattern.sensitiveSinks:
             if self.string.startswith(sinkType):
@@ -116,7 +121,6 @@ class Sink:
 
     def printVulnerabilities(self):
         for vuln in self.vulnList:
-            # print("X-->" + vpattern.vulnerabilityName + " in: " + self.instructionLine + "\n\tbecause of: " + var.string)
             print("X-->" + vuln[0].vulnerabilityName + " in: " + vuln[1] + "\n\tbecause of: " + vuln[2])
 
     def process(self, vars, vpattern):
@@ -125,7 +129,8 @@ class Sink:
         integrity = "high"
         for var in self.vars:
             if var.process(vars, vpattern) == "low":
-                print("X-->" + vpattern.vulnerabilityName + " in: " + self.instructionLine + "\n\tbecause of: " + var.string)
+                if debugging:
+                    print("X-->" + vpattern.vulnerabilityName + " in: " + self.instructionLine + "\n\tbecause of: " + var.string)
                 integrity = "low"
                 self.vulnerableState = 1
                 self.vulnList.append([vpattern, self.instructionLine, var.string])
@@ -139,7 +144,8 @@ class PhpStrings:
         self.identation = identation
         self.string = string
         self.vars = []
-        print(identation * "\t" + "PhpStrings: " + string)
+        if debugging:
+            print(identation * "\t" + "PhpStrings: " + string)
 
         groups = re.findall("\'\s*[a-zA-Z0-9_\$\"\(\)\[\]]+\s*\'", string)
         groups_with_quotes = re.findall("\"\s*\.\s*[a-zA-Z0-9_\$\'\(\)\[\]]+\s*\.\s*\"", string)
@@ -162,7 +168,8 @@ class Sanitization:
     def __init__(self, string, identation, vpattern):
         self.identation = identation
         self.string = string
-        print(identation * "\t" + "Sanitization: " + string)
+        if debugging:
+            print(identation * "\t" + "Sanitization: " + string)
 
     def process(self, vars, vpattern):
         return "high"
@@ -171,7 +178,8 @@ class Sanitization:
 class PHPentry:
     def __init__(self, string,identation, vpattern):
         self.string = string
-        print(identation * "\t" + "PHPentry: " + string)
+        if debugging:
+            print(identation * "\t" + "PHPentry: " + string)
 
     def process(self, vars, vpattern):
         return "low"
@@ -180,7 +188,8 @@ class PHPentry:
 class PHPvar:
     def __init__(self, string, identation,vpattern):
         self.string = string
-        print(identation * "\t" + "PHPvar: " + string)
+        if debugging:
+            print(identation * "\t" + "PHPvar: " + string)
 
     # TODO: Confirm if a variable can be outside the list (it has None in the vars list)
     def process(self, vars, vpattern):
@@ -192,7 +201,8 @@ class PHPvar:
 class UnknownRValue:
     def __init__(self, string, identation, vpattern):
         self.string = string
-        print(identation * "\t" + "UnknownRValue: " + string)
+        if debugging:
+            print(identation * "\t" + "UnknownRValue: " + string)
 
     # TODO: Confirm if this should always return high integrity level
     def process(self, vars, vpattern):
@@ -225,7 +235,6 @@ def get_rvalue_type(string, identation, vpattern):
 
 
 def get_entries_in_sink(string, identation, vpattern):
-    #print("get_entries_in_sink "+ string)
     striped = string.strip(" ")
     striped = striped.lstrip("(").rstrip(")")
     striped = striped.strip(" ")
@@ -235,7 +244,6 @@ def get_entries_in_sink(string, identation, vpattern):
 
     for line in var_lines:
         mach = False
-        # print("line: "+line)
         str = line.strip()
 
         if str.startswith('\"') and str.endswith('\"'):
@@ -267,8 +275,6 @@ def get_entries_in_sink(string, identation, vpattern):
 
 def sub_html_php(content):
     content_inicial = content
-    #print("INITIAL CONTENT:")
-    #print(content)
 
     html_php = re.search("<\?.*\?>", content)
     while html_php:
@@ -280,16 +286,15 @@ def sub_html_php(content):
         content = re.sub("<.*>", html_php, content, 1)
         html_php = re.search("<\?.*\?>", content)
 
-    #print("END CONTENT:")
-    #print(content)
-    if content_inicial != content:
-        print("INITIAL CONTENT:")
-        print(content_inicial)
+    if debugging:
+        if content_inicial != content:
+            print("INITIAL CONTENT:")
+            print(content_inicial)
 
-        print("END CONTENT:")
-        print(content)
-    else:
-        print("sub_html_php: did nothing")
+            print("END CONTENT:")
+            print(content)
+        else:
+            print("sub_html_php: did nothing")
 
     return content
 
