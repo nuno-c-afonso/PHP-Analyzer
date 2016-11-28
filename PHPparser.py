@@ -146,6 +146,12 @@ class PhpStrings:
             cut = re.sub("\'", "", cut)
             self.vars.append(PHPvar(cut, identation + 1, vpattern))
 
+        groups2 = re.findall("\s*\"\." + var_regex + "\.\"\s*", string)
+        for cut in groups2:
+            cut = re.sub("\"\.", "", cut)
+            cut = re.sub("\.\"", "", cut)
+            self.vars.append(PHPvar(cut, identation + 1, vpattern))
+
     def process(self, vars, vpattern):
         for var in self.vars:
             if vars.get(var.string) == "low":
