@@ -95,7 +95,7 @@ class Sink:
 
         self.processed = False
         self.vulnList = []
-        self.vulnerableState = -1;
+        self.vulnerableState = -1
 
         self.identation = identation
         self.string = string.strip(";").strip()
@@ -141,20 +141,19 @@ class PhpStrings:
         self.vars = []
         print(identation * "\t" + "PhpStrings: " + string)
 
-        groups = re.findall("\s*\'" + var_regex + "\'\s*", string)
+        groups = re.findall("\'\s*[a-zA-Z0-9_\$\"\(\)\[\]]+\s*\'", string)
+        groups_with_quotes = re.findall("\"\s*\.\s*[a-zA-Z0-9_\$\'\(\)\[\]]+\s*\.\s*\"", string)
         for cut in groups:
-            cut = re.sub("\'", "", cut)
-            self.vars.append(PHPvar(cut, identation + 1, vpattern))
+            cut = cut.strip("\'").strip()
+            self.vars.extend(get_entries_in_sink(cut, identation + 1, vpattern))
 
-        groups2 = re.findall("\s*\"\." + var_regex + "\.\"\s*", string)
-        for cut in groups2:
-            cut = re.sub("\"\.", "", cut)
-            cut = re.sub("\.\"", "", cut)
-            self.vars.append(PHPvar(cut, identation + 1, vpattern))
+        for cut in groups_with_quotes:
+            cut = cut.strip("\"").strip().strip(".").strip()
+            self.vars.extend(get_entries_in_sink(cut, identation + 1, vpattern))
 
     def process(self, vars, vpattern):
         for var in self.vars:
-            if vars.get(var.string) == "low":
+            if var.process(vars, vpattern) == "low":
                 return "low"
         return "high"
 
@@ -163,19 +162,14 @@ class Sanitization:
     def __init__(self, string, identation, vpattern):
         self.identation = identation
         self.string = string
-        self.vars = []
         print(identation * "\t" + "Sanitization: " + string)
-
-        groups = re.findall(var_regex, string)
-        for cut in groups:
-            self.vars.append(PHPvar(cut, identation + 1, vpattern))
 
     def process(self, vars, vpattern):
         return "high"
 
 
 class PHPentry:
-    def __init__(self, string,identation,vpattern):
+    def __init__(self, string,identation, vpattern):
         self.string = string
         print(identation * "\t" + "PHPentry: " + string)
 
@@ -229,29 +223,6 @@ def get_rvalue_type(string, identation, vpattern):
 
     return UnknownRValue(str, identation, vpattern)
 
-"""
-def get_vars(string, identation, vpattern):
-    str = string.strip()
-
-    if str.startswith('\"') & str.endswith('\";'):
-        return PhpStrings(str, identation, vpattern)
-
-    # TODO: The specific types may not be at the start of the string. Maybe they are concatenated.
-    for entryType in vpattern.entryPoints:
-        if str.search(entryType):
-            return PHPentry(str, identation, vpattern)
-
-    for sanitize_type in vpattern.sanitizationFunctions:
-        if str.startswith(sanitize_type):
-            return Sanitization(str, identation, vpattern)
-
-    for sinkType in vpattern.sensitiveSinks:
-        if re.search(sinkType, str) != None:
-            return Sink(str, identation, vpattern)
-
-    if str.startswith("$"):
-        return PHPvar(str, identation, vpattern)
-"""
 
 def get_entries_in_sink(string, identation, vpattern):
     #print("get_entries_in_sink "+ string)
@@ -266,22 +237,25 @@ def get_entries_in_sink(string, identation, vpattern):
         mach = False
         # print("line: "+line)
         str = line.strip()
+
         if str.startswith('\"') & str.endswith('\";'):
             vars.append(PhpStrings(str, identation, vpattern))
 
-        elif mach != True:
+        if mach != True:
             for entryType in vpattern.entryPoints:
                 if str.startswith(entryType):
                     vars.append(PHPentry(str, identation, vpattern))
                     mach = True
-        elif mach != True:
+
+        if mach != True:
             for sanitize_type in vpattern.sanitizationFunctions:
                 if str.startswith(sanitize_type):
                     vars.append(Sanitization(str, identation, vpattern))
                     mach = True
-        elif mach != True:
+
+        if mach != True:
             for sinkType in vpattern.sensitiveSinks:
-                if str.startswith(sinkType) != None:
+                if str.startswith(sinkType):
                     vars.append(Sink(str, identation, vpattern))
                     mach = True
 
