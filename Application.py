@@ -3,8 +3,8 @@ from VulnerabilityPattern import *
 import sys
 
 # TODO: Remove after debugging
-path = "./Slices/"
-print path
+#path = "./Slices/"
+#print (path)
 
 #files = ["sqli_01_sanitized.txt","sqli_02_sanitized.txt","sqli_03_sanitized.txt","sqli_04_sanitized.txt","sqli_05_sanitized.txt","xss_01_sanitized.txt","xss_02_sanitized.txt","xss_03_sanitized.txt"]#,
         #"teste.txt" ]
@@ -19,36 +19,6 @@ files = ["sqli_01.txt","sqli_02.txt","sqli_03.txt","sqli_04.txt","sqli_05.txt","
          "sqli_01_sanitized.txt", "sqli_02_sanitized.txt", "sqli_03_sanitized.txt", "sqli_04_sanitized.txt",
          "sqli_05_sanitized.txt", "xss_01_sanitized.txt", "xss_02_sanitized.txt", "xss_03_sanitized.txt",
          "sqli_01_entry.txt", "sqli_website.txt"]
-
-
-if len(sys.argv) == 1:
-    print("Please give the name of the slice file as an argument.")
-
-else:
-    filename_patterns = "PatternsFile.txt"
-    input = raw_input("Please input the filename of the patterns' file (<enter> for the default option)\n> ").strip()
-    if input != "":
-        filename_patterns = input
-
-    slices = []
-    filename_slices = sys.argv[1]
-
-    try:
-        patterns = patterns_from_file(filename_patterns)
-        content_file = open(filename_slices, 'r')
-        content = content_file.read()
-
-        for pattern in patterns:
-            slices.append(Slice(filename_slices, content, pattern))
-
-        for slice in slices:
-            if slice.isVulnerable():
-                print slice.name + " | this slice is vulnerable: "
-                slice.printVulnerabilities()
-                print "\n"
-
-    except IOError:
-        print("There was an error while opening the file. Please try again.")
 
 """
 slices = []
@@ -67,3 +37,35 @@ for slice in slices:
         slice.printVulnerabilities() #TODO fazer print dentro da funcao ou fora ?
         print "\n"
 """
+
+
+if len(sys.argv) == 1:
+    print("Please give the name of the slice file as an argument.")
+
+else:
+    filename_patterns = "PatternsFile.txt"
+    input = raw_input("Please input the filename of the patterns' file (<enter> for the default option)\n> ").strip()
+    print("\n")
+
+    if input != "":
+        filename_patterns = input
+
+    slices = []
+    filename_slices = sys.argv[1]
+
+    try:
+        patterns = patterns_from_file(filename_patterns)
+        content_file = open(filename_slices, 'r')
+        content = content_file.read()
+
+        for pattern in patterns:
+            slices.append(Slice(filename_slices, content, pattern))
+
+        for slice in slices:
+            if slice.isVulnerable():
+                print slice.name + " | this slice is vulnerable: "
+                slice.printVulnerabilities()
+                print("\n")
+
+    except IOError:
+        print("There was an error while opening the file. Please try again.")
