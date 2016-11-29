@@ -148,15 +148,19 @@ class PhpStrings:
         if debugging:
             print(identation * "\t" + "PhpStrings: " + string)
 
-        groups = re.findall("\'\s*[a-zA-Z0-9_\$\"\(\)\[\]]+\s*\'", string)
-        groups_with_quotes = re.findall("\"\s*\.\s*[a-zA-Z0-9_\$\'\(\)\[\]]+\s*\.\s*\"", string)
+        groups = re.findall("\'\s*[a-zA-Z0-9_\$\"\(\)\[\], ]+\s*\'", string)
+        groups_with_quotes = re.findall("\"\s*\.\s*[a-zA-Z0-9_\$\'\(\)\[\], ]+\s*\.\s*\"", string)
         for cut in groups:
             cut = cut.strip("\'").strip()
-            self.vars.extend(get_entries_in_sink(cut, identation + 1, vpattern))
+            entry = get_entry(cut, identation + 1, vpattern)
+            if entry:
+                self.vars.append(entry)
 
         for cut in groups_with_quotes:
             cut = cut.strip("\"").strip().strip(".").strip()
-            self.vars.extend(get_entries_in_sink(cut, identation + 1, vpattern))
+            entry = get_entry(cut, identation + 1, vpattern)
+            if entry:
+                self.vars.append(entry)
 
     def process(self, vars, vpattern):
         for var in self.vars:
@@ -192,7 +196,6 @@ class PHPvar:
         if debugging:
             print(identation * "\t" + "PHPvar: " + string)
 
-    # TODO: Confirm if a variable can be outside the list (it has None in the vars list)
     def process(self, vars, vpattern):
         if vars.get(self.string) != None:
             return vars.get(self.string)
@@ -205,7 +208,6 @@ class UnknownRValue:
         if debugging:
             print(identation * "\t" + "UnknownRValue: " + string)
 
-    # TODO: Confirm if this should always return high integrity level
     def process(self, vars, vpattern):
         return "high"
 
@@ -216,7 +218,6 @@ def get_rvalue_type(string, identation, vpattern):
     if str.startswith('\"') and str.endswith('\"'):
         return PhpStrings(str, identation, vpattern)
 
-    # TODO: The specific types may not be at the start of the string. Maybe they are concatenated.
     for entryType in vpattern.entryPoints:
         if str.startswith(entryType):
             return PHPentry(str, identation, vpattern)
@@ -240,38 +241,40 @@ def get_entries_in_sink(string, identation, vpattern):
     striped = striped.lstrip("(").rstrip(")")
     striped = striped.strip(" ")
 
-    var_lines = striped.split(",")
+    var_lines = remove_outer_commas(striped)
     vars = []
 
     for line in var_lines:
-        mach = False
         str = line.strip()
 
         if str.startswith('\"') and str.endswith('\"'):
             vars.append(PhpStrings(str, identation, vpattern))
 
-        if mach != True:
-            for entryType in vpattern.entryPoints:
-                if str.startswith(entryType):
-                    vars.append(PHPentry(str, identation, vpattern))
-                    mach = True
-
-        if mach != True:
-            for sanitize_type in vpattern.sanitizationFunctions:
-                if str.startswith(sanitize_type):
-                    vars.append(Sanitization(str, identation, vpattern))
-                    mach = True
-
-        if mach != True:
-            for sinkType in vpattern.sensitiveSinks:
-                if str.startswith(sinkType):
-                    vars.append(Sink(str, identation, vpattern))
-                    mach = True
-
-        if mach != True and str.startswith("$"):
-            vars.append(PHPvar(str, identation, vpattern))
+        else:
+            entry = get_entry(str, identation, vpattern)
+            if entry:
+                vars.append(entry)
 
     return vars
+
+
+def get_entry(str, identation, vpattern):
+    for sanitize_type in vpattern.sanitizationFunctions:
+        if str.startswith(sanitize_type):
+            return Sanitization(str, identation, vpattern)
+
+    for sinkType in vpattern.sensitiveSinks:
+        if str.startswith(sinkType):
+            return Sink(str, identation, vpattern)
+
+    for entryType in vpattern.entryPoints:
+        if str.startswith(entryType):
+            return PHPentry(str, identation, vpattern)
+
+    if str.startswith("$"):
+        return PHPvar(str, identation, vpattern)
+
+    return None
 
 
 def sub_html_php(content):
@@ -307,5 +310,42 @@ def split_by_lines(content):
         line = line.strip()
         if not (line.startswith("<") or line.endswith(">")):
             result.append(line)
+
+    return result
+
+
+def remove_outer_commas(string):
+    string_prime = False
+    string_quote = False
+    inside_parenthesis = 0
+    result = []
+    current_string = ""
+
+    for char in string:
+        if char == "," and not (string_prime or string_quote) and inside_parenthesis == 0:
+            result.append(current_string)
+            current_string = ""
+
+        else:
+            if char == "\"":
+                if inside_parenthesis == 0 and not string_prime:
+                    string_quote = not string_quote
+
+            elif char == "'":
+                if inside_parenthesis == 0 and not string_quote:
+                    string_prime = not string_prime
+
+            elif char == "(":
+                if not(string_prime or string_quote):
+                    inside_parenthesis += 1
+
+            elif char == ")":
+                if not(string_prime or string_quote):
+                    inside_parenthesis -= 1
+
+            current_string += char
+
+    if len(current_string) != 0:
+        result.append(current_string)
 
     return result
