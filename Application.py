@@ -4,7 +4,7 @@ from OutputColors import *
 import sys
 
 # TODO: Remove after debugging
-#path = "./Slices/"
+path = "./Slices/"
 #print (path)
 
 #files = ["sqli_01_sanitized.txt","sqli_02_sanitized.txt","sqli_03_sanitized.txt","sqli_04_sanitized.txt","sqli_05_sanitized.txt","xss_01_sanitized.txt","xss_02_sanitized.txt","xss_03_sanitized.txt"]#,
@@ -21,23 +21,8 @@ files = ["sqli_01.txt","sqli_02.txt","sqli_03.txt","sqli_04.txt","sqli_05.txt","
          "sqli_05_sanitized.txt", "xss_01_sanitized.txt", "xss_02_sanitized.txt", "xss_03_sanitized.txt",
          "sqli_01_entry.txt", "sqli_website.txt"]
 
-"""
-slices = []
-for file in files:
 
-    # TODO: Remove on final version
-    print("\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + file + "#" * 23 + "\n" + "#" * 63 + "\n")
 
-    for pattern in patterns:
-        slices.append(Slice(path + file, pattern))
-
-# apenas diz o nome do ficheiro e qual a vulnerabilidade
-for slice in slices:
-    if slice.isVulnerable():
-        print slice.name + " | this slice is vulnerable: "
-        slice.printVulnerabilities() #TODO fazer print dentro da funcao ou fora ?
-        print "\n"
-"""
 
 """
 if len(sys.argv) == 1:
@@ -71,19 +56,39 @@ else:
     except IOError:
         print("There was an error while opening the file. Please try again.")
 """
+"""
+slices = []
+for file in files:
+
+    # TODO: Remove on final version
+    print("\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + file + "#" * 23 + "\n" + "#" * 63 + "\n")
+
+    for pattern in patterns:
+        slices.append(Slice(path + file, pattern))
+
+# apenas diz o nome do ficheiro e qual a vulnerabilidade
+for slice in slices:
+    if slice.isVulnerable():
+        print slice.name + " | this slice is vulnerable: "
+        slice.printVulnerabilities() #TODO fazer print dentro da funcao ou fora ?
+        print "\n"
+"""
 
 
-filename_patterns = "PatternsFile.txt"
-
+#filename_patterns = "PatternsFile.txt"
+filename_patterns = "PatternsTest.txt"
 slices = []
 filename_slices = "Slices/sqli_04_sanitized.txt"
 try:
     patterns = patterns_from_file(filename_patterns)
-    content_file = open(filename_slices, 'r')
-    content = content_file.read()
 
-    for pattern in patterns:
-        slices.append(Slice(filename_slices, content, pattern))
+
+    for file in files:
+        print(colors.BLUE+"\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + file + "#" * 23 + "\n" + "#" * 63 + "\n"+colors.RESET)
+        content_file = open(path+file, 'r')
+        content = content_file.read()
+        for pattern in patterns:
+            slices.append(Slice(path+file, content, pattern))
 
     for slice in slices:
         if slice.isVulnerable():

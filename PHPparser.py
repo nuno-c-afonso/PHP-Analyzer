@@ -20,7 +20,7 @@ class Slice:
 
         if debugging:
             print(colors.YELLOW+"\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + vp.vulnerabilityName + "#" * 23 + "\n" + "#" * 63 + "\n"+colors.RESET)
-            print(colors.BLUE+" "*61 + "\n" + "-"*23 + " slice content " + "-"*23 + "\n" + " "*61 +colors.RESET + "\n" + "\n" + content)
+            print(" "*61 + "\n" + "-"*23 + " slice content " + "-"*23 + "\n" + " "*61 + "\n" + "\n" + content)
 
         content = sub_html_php(content)
         lines = getPHPLines(content.replace('\n', '').replace('\r', ''))
@@ -29,7 +29,7 @@ class Slice:
         self.slice_order = []
 
         if debugging:
-            print(colors.BLUE+" " * 60 + "\n" + "-" * 23 + " parsing tree " + "-" * 23 + "\n" + " " * 60 +colors.RESET+ "\n")
+            print(" " * 60 + "\n" + "-" * 23 + " parsing tree " + "-" * 23 + "\n" + " " * 60 + "\n")
 
         for line in lines:
             if atributionPatern.match(line) != None:
@@ -43,11 +43,15 @@ class Slice:
 
 
     def process(self):
+        order = []
         if debugging:
-            print(colors.BLUE+" " * 63 + "\n" + "-" * 23 + " tree processing " + "-" * 23 + "\n" + " " * 63 + "\n"+colors.RESET)
+            print(" " * 63 + "\n" + "-" * 23 + " tree processing " + "-" * 23 + "\n" + " " * 63 + "\n")
+            print(getGraphCaption())
         vars = {}#this is a dictionary
         for e in self.slice_order:
-            e.process(vars, self.vp)
+            e.process(vars, self.vp, order)
+        if debugging:
+            print(getVarsIntegrityLine(vars, order))
 
     def isVulnerable(self):
         for sink_or_attr in self.slice_order:
@@ -87,11 +91,19 @@ class PHPatribution:
         if isinstance(self.right, Sink):
             return self.right.printVulnerabilities()
 
-    def process(self, vars, vpattern):
-        integrity = self.right.process(vars, vpattern)
-        vars[self.left.string] = integrity
+    def process(self, vars, vpattern, order):
         if debugging:
-            print(getVarsIntegrityLine(vars))
+            print(getVarsIntegrityLine(vars,order))
+        if self.left.string not in order:
+            order.append(self.left.string)
+
+        integrity = self.right.process(vars, vpattern, order)
+        vars[self.left.string] = integrity
+
+        if debugging:
+            print(getTransformationLine(self.right, order, self.left.string, vars))
+
+
         return integrity
 
 
@@ -124,18 +136,20 @@ class Sink:
         for vuln in self.vulnList:
             print("X-->" + vuln[0].vulnerabilityName + " in: " + vuln[1] + "\n\tbecause of: " + vuln[2])
 
-    def process(self, vars, vpattern):
+    def process(self, vars, vpattern, order):
         self.vulnerableState = 0
 
         integrity = "high"
         for var in self.vars:
-            if var.process(vars, vpattern) == "low":
+            if var.process(vars, vpattern, order) == "low":
                 if debugging:
-                    print("X-->" + vpattern.vulnerabilityName + " in: " + self.instructionLine + "\n\tbecause of: " + var.string)
+                    print(getSinkPrintVuln(vpattern.vulnerabilityName, self.instructionLine, var.string, vars))
                 integrity = "low"
                 self.vulnerableState = 1
                 self.vulnList.append([vpattern, self.instructionLine, var.string])
 
+        if integrity =="high":
+            print(getSinkPrintClean(self.instructionLine, vars))
         self.processed = True
         return integrity
 
@@ -162,9 +176,9 @@ class PhpStrings:
             if entry:
                 self.vars.append(entry)
 
-    def process(self, vars, vpattern):
+    def process(self, vars, vpattern, order):
         for var in self.vars:
-            if var.process(vars, vpattern) == "low":
+            if var.process(vars, vpattern, order) == "low":
                 return "low"
         return "high"
 
@@ -176,7 +190,7 @@ class Sanitization:
         if debugging:
             print(identation * "\t" + "Sanitization: " + string)
 
-    def process(self, vars, vpattern):
+    def process(self, vars, vpattern, order):
         return "high"
 
 
@@ -186,7 +200,7 @@ class PHPentry:
         if debugging:
             print(identation * "\t" + "PHPentry: " + string)
 
-    def process(self, vars, vpattern):
+    def process(self, vars, vpattern, order):
         return "low"
 
 
@@ -196,7 +210,7 @@ class PHPvar:
         if debugging:
             print(identation * "\t" + "PHPvar: " + string)
 
-    def process(self, vars, vpattern):
+    def process(self, vars, vpattern, order):
         if vars.get(self.string) != None:
             return vars.get(self.string)
         return "high"
@@ -205,10 +219,28 @@ class PHPvar:
 class UnknownRValue:
     def __init__(self, string, identation, vpattern):
         self.string = string
+        self.vars = []
         if debugging:
             print(identation * "\t" + "UnknownRValue: " + string)
 
-    def process(self, vars, vpattern):
+        string = string.strip()
+        i=0
+        if string.count("(")!=0:
+            i=string.index("(")
+
+        if string.count(" ") != 0:
+            i = min([i, string.index(" ")])
+
+        if i!=0:
+            inputs = string[i:]
+            self.vars = get_entries_in_sink(inputs, identation + 1, vpattern)
+
+
+
+    def process(self, vars, vpattern, order):
+        for var in self.vars:
+            if var.process(vars, vpattern, order) == "low":
+                return "low"
         return "high"
 
 
