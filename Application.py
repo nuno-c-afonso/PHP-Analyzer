@@ -1,5 +1,6 @@
 from PHPparser import *
 from VulnerabilityPattern import *
+from OutputColors import *
 import sys
 
 # TODO: Remove after debugging
@@ -38,9 +39,9 @@ for slice in slices:
         print "\n"
 """
 
-
+"""
 if len(sys.argv) == 1:
-    print("Please give the name of the slice file as an argument.")
+    print(colors.RED+"Please give the name of the slice file as an argument."+colors.RESET)
 
 else:
     filename_patterns = "PatternsFile.txt"
@@ -63,9 +64,32 @@ else:
 
         for slice in slices:
             if slice.isVulnerable():
-                print slice.name + " | this slice is vulnerable: "
+                print(slice.name + " | this slice is vulnerable: ")
                 slice.printVulnerabilities()
                 print("\n")
 
     except IOError:
         print("There was an error while opening the file. Please try again.")
+"""
+
+
+filename_patterns = "PatternsFile.txt"
+
+slices = []
+filename_slices = "Slices/sqli_04_sanitized.txt"
+try:
+    patterns = patterns_from_file(filename_patterns)
+    content_file = open(filename_slices, 'r')
+    content = content_file.read()
+
+    for pattern in patterns:
+        slices.append(Slice(filename_slices, content, pattern))
+
+    for slice in slices:
+        if slice.isVulnerable():
+            print(slice.name + " | this slice is vulnerable: ")
+            slice.printVulnerabilities()
+            print("\n")
+
+except IOError:
+    print("There was an error while opening the file. Please try again.")

@@ -1,11 +1,12 @@
 import re
 from VulnerabilityPattern import *
+from OutputColors import *
 
 
 var_regex = "\$[a-zA-Z_]\w*"
 php_start_tag_regex = "<\?php\s*"
 php_end_tag_regex = "\?>"
-debugging = False
+debugging = True
 
 def getPHPLines(content):
     d = ";"
@@ -18,8 +19,8 @@ class Slice:
         self.identation = 0
 
         if debugging:
-            print("\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + vp.vulnerabilityName + "#" * 23 + "\n" + "#" * 63 + "\n")
-            print(" "*61 + "\n" + "-"*23 + " slice content " + "-"*23 + "\n" + " "*61 + "\n" + "\n" + content)
+            print(colors.YELLOW+"\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + vp.vulnerabilityName + "#" * 23 + "\n" + "#" * 63 + "\n"+colors.RESET)
+            print(colors.BLUE+" "*61 + "\n" + "-"*23 + " slice content " + "-"*23 + "\n" + " "*61 +colors.RESET + "\n" + "\n" + content)
 
         content = sub_html_php(content)
         lines = getPHPLines(content.replace('\n', '').replace('\r', ''))
@@ -28,7 +29,7 @@ class Slice:
         self.slice_order = []
 
         if debugging:
-            print(" " * 60 + "\n" + "-" * 23 + " parsing tree " + "-" * 23 + "\n" + " " * 60 + "\n")
+            print(colors.BLUE+" " * 60 + "\n" + "-" * 23 + " parsing tree " + "-" * 23 + "\n" + " " * 60 +colors.RESET+ "\n")
 
         for line in lines:
             if atributionPatern.match(line) != None:
@@ -43,7 +44,7 @@ class Slice:
 
     def process(self):
         if debugging:
-            print(" " * 63 + "\n" + "-" * 23 + " tree processing " + "-" * 23 + "\n" + " " * 63 + "\n")
+            print(colors.BLUE+" " * 63 + "\n" + "-" * 23 + " tree processing " + "-" * 23 + "\n" + " " * 63 + "\n"+colors.RESET)
         vars = {}#this is a dictionary
         for e in self.slice_order:
             e.process(vars, self.vp)
@@ -90,7 +91,7 @@ class PHPatribution:
         integrity = self.right.process(vars, vpattern)
         vars[self.left.string] = integrity
         if debugging:
-            print(vars)
+            print(getVarsIntegrityLine(vars))
         return integrity
 
 
