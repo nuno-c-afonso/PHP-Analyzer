@@ -74,6 +74,7 @@ for slice in slices:
         print "\n"
 """
 
+debuggingApp = True
 
 #filename_patterns = "PatternsFile.txt"
 filename_patterns = "PatternsTest.txt"
@@ -81,7 +82,6 @@ slices = []
 filename_slices = "Slices/sqli_04_sanitized.txt"
 try:
     patterns = patterns_from_file(filename_patterns)
-
 
     for file in files:
         print(colors.BLUE+"\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + file + "#" * 23 + "\n" + "#" * 63 + "\n"+colors.RESET)
@@ -104,7 +104,14 @@ try:
 
         #print(" ==== NOT vulnerable parts")
         slice.printAllVulnInfo()
-        #print("_"*30)
+        if debuggingApp:
+            print("\n       " + "-" * 23 + " DEBUG: tree processing " + "-" * 23 + "\n" + " " * 63 + "\n")
+            print(getGraphCaption())
+            tree = slice.getVulnTreeInfo()
+            for treeline in tree:
+                print(treeline)
+
+            print("\n       " + "-" * 23 + " END DEBUG: tree processing " + "-" * 23 + "\n" + " " * 63 + "\n")
 
 
 except IOError:

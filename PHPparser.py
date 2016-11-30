@@ -6,7 +6,7 @@ from OutputColors import *
 var_regex = "\$[a-zA-Z_]\w*"
 php_start_tag_regex = "<\?php\s*"
 php_end_tag_regex = "\?>"
-debugging = False
+debugging = True
 
 def getPHPLines(content):
     d = ";"
@@ -17,6 +17,7 @@ class Slice:
         self.vp = vp
         self.name = filePath
         self.identation = 0
+        self.treeLog = []
 
         if debugging:
             print(colors.YELLOW+"\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + vp.vulnerabilityName + "#" * 23 + "\n" + "#" * 63 + "\n"+colors.RESET)
@@ -50,8 +51,11 @@ class Slice:
         vars = {}#this is a dictionary
         for e in self.slice_order:
             e.process(vars, self.vp, order)
+
+        color_line = getVarsIntegrityLine(vars, order)
+        self.treeLog.append(color_line)
         if debugging:
-           print(getVarsIntegrityLine(vars, order))
+           print(color_line)
 
     def isVulnerable(self):
         for sink_or_attr in self.slice_order:
@@ -67,6 +71,14 @@ class Slice:
         for sink_or_attr in self.slice_order:
             sink_or_attr.printAllVulnInfo()
 
+    def getVulnTreeInfo(self):
+        strings = []
+        for sink_or_attr in self.slice_order:
+            strings.extend(sink_or_attr.getVulnTreeInfo())
+        strings.extend(self.treeLog[:])
+        return strings
+
+
 
 def IsSink(line, vpattern):
     for sinkType in vpattern.sensitiveSinks:
@@ -80,6 +92,7 @@ class PHPatribution:
         if debugging:
             print(identation*"\t" + "atribution: " + string)
         self.identation = identation
+        self.treeLog = []
 
         string = string.strip(";").strip()
         split = string.split("=", 1)
@@ -98,9 +111,19 @@ class PHPatribution:
         if isinstance(self.right, Sink):
             return self.right.printAllVulnInfo()
 
+    def getVulnTreeInfo(self):
+        strings = self.treeLog[:]
+        if isinstance(self.right, Sink):
+            strings.extend(self.right.getVulnTreeInfo())
+        return strings
+
+
+
     def process(self, vars, vpattern, order):
+        color_line = getVarsIntegrityLine(vars,order)
+        self.treeLog.append(color_line)
         if debugging:
-            print(getVarsIntegrityLine(vars,order))
+            print(color_line)
 
 
         integrity = self.right.process(vars, vpattern, order)
@@ -108,9 +131,11 @@ class PHPatribution:
         if self.left.string not in order:
             order.append(self.left.string)
 
+        color_line = getTransformationLine(self.right, order, self.left.string, vars)
+        self.treeLog.append(color_line)
         if debugging:
             #print(getVarsIntegrityLine(vars, order))
-            print(getTransformationLine(self.right, order, self.left.string, vars))
+            print(color_line)
 
         vars[self.left.string] = integrity
 
@@ -122,7 +147,9 @@ class Sink:
 
         self.processed = False
 
-        self.vulnInfoList = []
+        self.treeLog = []
+
+        self.vulnCleanList = []
         self.vulnList = []
         self.vulnerableState = -1
 
@@ -150,8 +177,11 @@ class Sink:
             print("X-->" + vuln[0].vulnerabilityName + " in: " + vuln[1] + "\n\tbecause of: " + vuln[2])
 
     def printAllVulnInfo(self):
-        for info in self.vulnInfoList:
+        for info in self.vulnCleanList:
             print(info)
+
+    def getVulnTreeInfo(self):
+        return self.treeLog
 
     def process(self, vars, vpattern, order):
         self.vulnerableState = 0
@@ -160,8 +190,7 @@ class Sink:
         for var in self.vars:
             if var.process(vars, vpattern, order) == "low":
                 varVulnPrint = getSinkPrintVuln(vpattern.vulnerabilityName, self.instructionLine, var.string, vars, order)
-                #justInjectionText = varVulnPrint.split("|")[-1].strip()
-                #self.vulnInfoList.append(justInjectionText)
+                self.treeLog.append(varVulnPrint)
                 if debugging:
                     print(varVulnPrint)
 
@@ -171,8 +200,10 @@ class Sink:
 
         if integrity =="high":
             varCleanPrint = getSinkPrintClean(vpattern.vulnerabilityName,self.instructionLine, vars,order)
+            self.treeLog.append(varCleanPrint)
+
             justInjectionText = varCleanPrint.split("|")[-1].strip()
-            self.vulnInfoList.append(justInjectionText)
+            self.vulnCleanList.append(justInjectionText)
             if debugging:
                 print(varCleanPrint)
 
