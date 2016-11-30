@@ -71,12 +71,13 @@ class Slice:
             sink_or_attr.printVulnerabilities()
 
     def printAllVulnInfo(self):
-        count = 0
+        any_sinks = False
         for sink_or_attr in self.slice_order:
-            if isinstance(sink_or_attr, Sink):
-                count += 1
+            if isinstance(sink_or_attr, Sink) or isinstance(sink_or_attr.right, Sink):
+                any_sinks = True
+                break
 
-        if count == 0:
+        if not any_sinks:
             print(colors.BLUE2 + "!!! No Sink in this slice for " + self.vp.vulnerabilityName + " !!!" + colors.RESET)
         else:
             for sink_or_attr in self.slice_order:
