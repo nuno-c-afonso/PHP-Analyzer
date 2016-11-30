@@ -19,7 +19,7 @@ path = "./Slices/"
 files = ["sqli_01.txt","sqli_02.txt","sqli_03.txt","sqli_04.txt","sqli_05.txt","xss_01.txt","xss_02.txt","xss_03.txt",
          "sqli_01_sanitized.txt", "sqli_02_sanitized.txt", "sqli_03_sanitized.txt", "sqli_04_sanitized.txt",
          "sqli_05_sanitized.txt", "xss_01_sanitized.txt", "xss_02_sanitized.txt", "xss_03_sanitized.txt",
-         "sqli_01_entry.txt", "sqli_website.txt"]
+         "sqli_01_entry.txt", "sqli_website.txt", "teste.txt"]
 
 
 

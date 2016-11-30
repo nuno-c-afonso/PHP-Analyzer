@@ -51,7 +51,7 @@ class Slice:
         for e in self.slice_order:
             e.process(vars, self.vp, order)
         if debugging:
-            print(getVarsIntegrityLine(vars, order))
+           print(getVarsIntegrityLine(vars, order))
 
     def isVulnerable(self):
         for sink_or_attr in self.slice_order:
@@ -94,15 +94,18 @@ class PHPatribution:
     def process(self, vars, vpattern, order):
         if debugging:
             print(getVarsIntegrityLine(vars,order))
+
+
+        integrity = self.right.process(vars, vpattern, order)
+
         if self.left.string not in order:
             order.append(self.left.string)
 
-        integrity = self.right.process(vars, vpattern, order)
-        vars[self.left.string] = integrity
-
         if debugging:
+            #print(getVarsIntegrityLine(vars, order))
             print(getTransformationLine(self.right, order, self.left.string, vars))
 
+        vars[self.left.string] = integrity
 
         return integrity
 
@@ -119,15 +122,16 @@ class Sink:
         self.instructionLine = self.string
         self.vars = []
         self.entries = []
+        auxString = ""
         if debugging:
             print(self.identation * "\t" + "Sink: " + self.string)
 
         for sinkType in vpattern.sensitiveSinks:
             if self.string.startswith(sinkType):
-                self.string = self.string.lstrip(sinkType)
+                auxString = self.string.lstrip(sinkType)
                 break
 
-        self.vars = get_entries_in_sink(self.string, identation + 1, vpattern)
+        self.vars = get_entries_in_sink(auxString, identation + 1, vpattern)
 
     def isVulnerable(self):
         return self.processed == True and self.vulnerableState == 1
@@ -143,13 +147,13 @@ class Sink:
         for var in self.vars:
             if var.process(vars, vpattern, order) == "low":
                 if debugging:
-                    print(getSinkPrintVuln(vpattern.vulnerabilityName, self.instructionLine, var.string, vars))
+                    print(getSinkPrintVuln(vpattern.vulnerabilityName, self.instructionLine, var.string, vars, order))
                 integrity = "low"
                 self.vulnerableState = 1
                 self.vulnList.append([vpattern, self.instructionLine, var.string])
 
         if integrity =="high":
-            print(getSinkPrintClean(self.instructionLine, vars))
+            print(getSinkPrintClean(vpattern.vulnerabilityName,self.instructionLine, vars,order))
         self.processed = True
         return integrity
 

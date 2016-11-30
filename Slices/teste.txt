@@ -1,3 +1,5 @@
+$esgarabich = 1;
+"wdecwedc".1."erfcwercew";
 $id_nilai=$_GET['idn'];
 $firstname=$_GET['idn'];
 $q_nilai="SELECT * FROM nilai INNER JOIN matapelajaran ON 

@@ -68,20 +68,50 @@ def getTransformationLine(change, order, changedVar, vars):
         if var == changedVar:
             line+= string+colors.RESET
         else:
-            line+= "|".center(columnSize, ' ')
+            if vars.get(var) == "high":
+                line += colors.GREEN + ("|").center(columnSize, ' ') + colors.RESET
+            else:
+                line += colors.RED + ("|").center(columnSize, ' ') + colors.RESET
 
     return line
 
 
-def getSinkPrintVuln(vulnerabilityName, instructionLine, string, vars):
-    old = "\nX-->"+ colors.RED + vulnerabilityName + " in: " + instructionLine + " because of: " + string + colors.RESET +" \n"
-    line = "" + old
+def getSinkPrintVuln(vulnerabilityName, instructionLine, string, vars, order):
+    line = ""
+    for var in order:
+        if vars.get(var) == "high":
+            line += colors.GREEN + ("|").center(columnSize, ' ') + colors.RESET
+        else:
+            line += colors.RED + ("|").center(columnSize, ' ') + colors.RESET
+
+    old = "\nX-->"+ colors.RED + vulnerabilityName + " in: "+ colors.RESET + instructionLine + " \n" + colors.RED+"    because of: " + string + colors.RESET
+    for var in vars:
+        if vars.get(var) == "high":
+            old= old.replace(var, colors.GREEN+var+colors.RESET)
+        else:
+            old = old.replace(var, colors.RED + var + colors.RESET)
+
+    line += old
 
     return line
 
-def getSinkPrintClean(string, vars):
-    old ="\n"+ colors.BLUE2 + "No vulnerabilityName + in: " + string + "because all args have high Integrity"+ colors.RESET+" \n"
-    line = ""+old
+def getSinkPrintClean(vulnerabilityName,string, vars, order):
+    line = ""
+    for var in order:
+        if vars.get(var) == "high":
+            line += colors.GREEN + ("|").center(columnSize, ' ') + colors.RESET
+        else:
+            line += colors.RED + ("|").center(columnSize, ' ') + colors.RESET
+
+    old ="\nX-->"+ colors.BLUE2 + "No "+ vulnerabilityName +" in: "+ colors.RESET + string+" \n"+ colors.BLUE2 + "    because all args have high Integrity"+ colors.RESET
+    for var in vars:
+        if vars.get(var) == "high":
+            old= old.replace(var, colors.GREEN+var+colors.RESET)
+        else:
+            old = old.replace(var, colors.RED + var + colors.RESET)
+
+
+    line += old
 
     return line
 
