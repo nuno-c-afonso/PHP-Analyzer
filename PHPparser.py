@@ -71,12 +71,16 @@ class Slice:
             sink_or_attr.printVulnerabilities()
 
     def printAllVulnInfo(self):
-        if len(self.slice_order) == 0:
-            print(colors.BLUE2 + "!!! No Sink in this slice for "+self.vp.vulnerabilityName+" !!!"+ colors.RESET)
+        count = 0
+        for sink_or_attr in self.slice_order:
+            if isinstance(sink_or_attr, Sink):
+                count += 1
+
+        if count == 0:
+            print(colors.BLUE2 + "!!! No Sink in this slice for " + self.vp.vulnerabilityName + " !!!" + colors.RESET)
         else:
             for sink_or_attr in self.slice_order:
                 sink_or_attr.printAllVulnInfo()
-    #TODO delete this coment
 
     def getVulnTreeInfo(self):
         strings = []
@@ -394,17 +398,6 @@ def sub_html_php(content):
             print("sub_html_php: did nothing")
 
     return content
-
-
-def split_by_lines(content):
-    result = []
-    lines = content.split("\n")
-    for line in lines:
-        line = line.strip()
-        if not (line.startswith("<") or line.endswith(">")):
-            result.append(line)
-
-    return result
 
 
 def remove_outer_commas(string):
