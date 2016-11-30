@@ -28,20 +28,21 @@ orders =['$_varHigh', '$_varLow']
 
 
 def getGraphCaption():
-    line="Color Caption: "
-    line+= colors.GREEN+" high integrity"+colors.RESET
-    line += colors.RED + " low integrity" + colors.BRESET
-    line += " " + colors.BLUE2 + "Safe Sink" + colors.RESET
-    line += " " +colors.RED+"Sink with vulnerability"+colors.BREDRESET
-    line+= " teste"
-    #line+= colors.BLUE +"blue1" + colors.BLUE2 + "blue2" +colors.RESET
-
+    line="Caption: "
+    line+= colors.GREEN+"high integrity "+colors.RESET
+    line += colors.RED + "low integrity " + colors.BRESET
+    line += colors.BLUE2 + "Safe Sink " + colors.RESET
+    line += colors.RED+"Sink with vulnerability "+colors.BREDRESET
     return line
 
 def getVarsIntegrityLine(vars, order):
     prevLine = ""
     line = ""
     nextLine = ""
+
+    if len(order) == 0:
+        return line
+
     for var in order:
         if vars.get(var) == "high":
             prevLine += colors.GREEN + ("|").center(columnSize, ' ') + colors.RESET
@@ -115,6 +116,3 @@ def getSinkPrintClean(vulnerabilityName,string, vars, order):
 
     return line
 
-#print(getVarsIntegrityLine(testInput,orders))
-
-print(getGraphCaption())

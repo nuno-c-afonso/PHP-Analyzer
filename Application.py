@@ -5,21 +5,11 @@ import sys
 
 # TODO: Remove after debugging
 path = "./Slices/"
-#print (path)
-
-#files = ["sqli_01_sanitized.txt","sqli_02_sanitized.txt","sqli_03_sanitized.txt","sqli_04_sanitized.txt","sqli_05_sanitized.txt","xss_01_sanitized.txt","xss_02_sanitized.txt","xss_03_sanitized.txt"]#,
-        #"teste.txt" ]
-#files = ["xss_01.txt", "xss_02.txt", "xss_03.txt"]
-#files = ["sqli_05.txt"]
-#files = ["sqli_01.txt","sqli_02.txt","sqli_03.txt","sqli_04.txt","sqli_05.txt","xss_01.txt","xss_02.txt","xss_03.txt"]
-#files = ["sqli_website.txt"]
-#files = ["sqli_01_entry.txt"]
-#files = ["teste.txt"]
 
 files = ["sqli_01.txt","sqli_02.txt","sqli_03.txt","sqli_04.txt","sqli_05.txt","xss_01.txt","xss_02.txt","xss_03.txt",
          "sqli_01_sanitized.txt", "sqli_02_sanitized.txt", "sqli_03_sanitized.txt", "sqli_04_sanitized.txt",
          "sqli_05_sanitized.txt", "xss_01_sanitized.txt", "xss_02_sanitized.txt", "xss_03_sanitized.txt",
-         "sqli_01_entry.txt", "sqli_website.txt", "teste.txt"]
+         "sqli_01_entry.txt", "sqli_website.txt", "teste.txt","sqli_unknown_rvalue.txt"]
 
 
 
@@ -74,7 +64,6 @@ for slice in slices:
         print "\n"
 """
 
-debuggingApp = True
 
 #filename_patterns = "PatternsFile.txt"
 filename_patterns = "PatternsTest.txt"
@@ -84,7 +73,8 @@ try:
     patterns = patterns_from_file(filename_patterns)
 
     for file in files:
-        print(colors.BLUE+"\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + file + "#" * 23 + "\n" + "#" * 63 + "\n"+colors.RESET)
+        if debugging:
+            print(colors.BLUE + "#" * 83 + "\n"  + "#" * 2 + file.center(79, ' ') + "#" * 2 + "\n"+ "#" * 83 + colors.RESET)
         content_file = open(path+file, 'r')
         content = content_file.read()
         for pattern in patterns:
@@ -94,24 +84,32 @@ try:
     for slice in slices:
         if prev_slice_name != slice.name:
             prev_slice_name = slice.name
-            print("_"*30 + "\n")
-            print("## " + slice.name)
+            if not debugging:
+                print("\n\n")
+                print(colors.BLUE + "#" * 83 + colors.RESET)
+                print(colors.BLUE + "#" * 2 + colors.RESET + slice.name.center(79, ' ') + colors.BLUE + "#" * 2 + colors.RESET)
+                print(colors.BLUE + "#" * 83 + colors.RESET)
 
-        if slice.isVulnerable():
-            #print("## " + slice.name + " | this slice is vulnerable: ")
-            slice.printVulnerabilities()
-            #print("\n")
+        if not debugging:
+            print("#" * 83)
+            print("#" * 2 + slice.vp.vulnerabilityName.center(79, ' ') + "#" * 2)
+            print("#" * 83)
 
-        #print(" ==== NOT vulnerable parts")
-        slice.printAllVulnInfo()
-        if debuggingApp:
-            print("\n       " + "-" * 23 + " DEBUG: tree processing " + "-" * 23 + "\n" + " " * 63 + "\n")
+        if not debugging:
+            if slice.isVulnerable():
+                slice.printVulnerabilities()
+            slice.printAllVulnInfo()
+
+
+        if not debugging:
+            print("\n" +colors.YELLOW +"#"*30 + "Integrity Flow".center(23, ' ') + "#"*30 + colors.RESET )
             print(getGraphCaption())
-            tree = slice.getVulnTreeInfo()
-            for treeline in tree:
+        tree = slice.getVulnTreeInfo()
+        for treeline in tree:
+            if not debugging:
                 print(treeline)
-
-            print("\n       " + "-" * 23 + " END DEBUG: tree processing " + "-" * 23 + "\n" + " " * 63 + "\n")
+        if not debugging:
+            print("\n\n")
 
 
 except IOError:

@@ -6,22 +6,23 @@ from OutputColors import *
 var_regex = "\$[a-zA-Z_]\w*"
 php_start_tag_regex = "<\?php\s*"
 php_end_tag_regex = "\?>"
-debugging = True
+debugging = False
 
 def getPHPLines(content):
     d = ";"
     return [line + d for line in content.split(d) if line != ""]
 
 class Slice:
-    def __init__(self, filePath, content, vp):
-        self.vp = vp
+    def __init__(self, filePath, content, vpatern):
+        self.vp = vpatern
         self.name = filePath
         self.identation = 0
         self.treeLog = []
 
         if debugging:
-            print(colors.YELLOW+"\n" + "\n" + "#" * 63 + "\n" + "#" * 23 + vp.vulnerabilityName + "#" * 23 + "\n" + "#" * 63 + "\n"+colors.RESET)
-            print(" "*61 + "\n" + "-"*23 + " slice content " + "-"*23 + "\n" + " "*61 + "\n" + "\n" + content)
+            print(colors.YELLOW + "#" * 83 + "\n" + "#" * 2 + self.vp.vulnerabilityName.center(79,' ') + "#" * 2\
+                  + "\n" + "#" * 83 + colors.RESET)
+            print("\n" + "-"*34 + " slice content " + "-"*33 + "\n" + "\n" + content)
 
         content = sub_html_php(content)
         lines = getPHPLines(content.replace('\n', '').replace('\r', ''))
@@ -30,7 +31,7 @@ class Slice:
         self.slice_order = []
 
         if debugging:
-            print(" " * 60 + "\n" + "-" * 23 + " parsing tree " + "-" * 23 + "\n" + " " * 60 + "\n")
+            print("\n" + "-" * 34 + " parsing tree " + "-" * 33 + "\n" + "\n")
 
         for line in lines:
             if atributionPatern.match(line) != None:
@@ -46,7 +47,7 @@ class Slice:
     def process(self):
         order = []
         if debugging:
-            print(" " * 63 + "\n" + "-" * 23 + " tree processing " + "-" * 23 + "\n" + " " * 63 + "\n")
+            print("\n" + "-" * 32 + " tree processing " + "-" * 32 + "\n" + "\n")
             print(getGraphCaption())
         vars = {}#this is a dictionary
         for e in self.slice_order:
@@ -55,7 +56,9 @@ class Slice:
         color_line = getVarsIntegrityLine(vars, order)
         self.treeLog.append(color_line)
         if debugging:
-           print(color_line)
+           print(color_line+ "\n")
+
+
 
     def isVulnerable(self):
         for sink_or_attr in self.slice_order:
@@ -68,8 +71,11 @@ class Slice:
             sink_or_attr.printVulnerabilities()
 
     def printAllVulnInfo(self):
-        for sink_or_attr in self.slice_order:
-            sink_or_attr.printAllVulnInfo()
+        if len(self.slice_order) == 0:
+            print(colors.BLUE2 + "!!! No Sink in this slice for "+self.vp.vulnerabilityName+" !!!"+ colors.RESET)
+        else:
+            for sink_or_attr in self.slice_order:
+                sink_or_attr.printAllVulnInfo()
 
     def getVulnTreeInfo(self):
         strings = []
@@ -224,14 +230,12 @@ class PhpStrings:
         for cut in groups:
             cut = cut.strip("\'").strip()
             entry = get_entry(cut, identation + 1, vpattern)
-            if entry:
-                self.vars.append(entry)
+            self.vars.append(entry)
 
         for cut in groups_with_quotes:
             cut = cut.strip("\"").strip().strip(".").strip()
             entry = get_entry(cut, identation + 1, vpattern)
-            if entry:
-                self.vars.append(entry)
+            self.vars.append(entry)
 
     def process(self, vars, vpattern, order):
         for var in self.vars:
@@ -341,8 +345,7 @@ def get_entries_in_sink(string, identation, vpattern):
 
         else:
             entry = get_entry(str, identation, vpattern)
-            if entry:
-                vars.append(entry)
+            vars.append(entry)
 
     return vars
 
@@ -363,7 +366,7 @@ def get_entry(str, identation, vpattern):
     if str.startswith("$"):
         return PHPvar(str, identation, vpattern)
 
-    return None
+    return UnknownRValue(str, identation, vpattern)
 
 
 def sub_html_php(content):
