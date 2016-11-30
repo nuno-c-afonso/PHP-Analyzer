@@ -76,6 +76,7 @@ class Slice:
         else:
             for sink_or_attr in self.slice_order:
                 sink_or_attr.printAllVulnInfo()
+    #TODO delete this coment
 
     def getVulnTreeInfo(self):
         strings = []
