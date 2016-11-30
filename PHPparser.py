@@ -6,7 +6,7 @@ from OutputColors import *
 var_regex = "\$[a-zA-Z_]\w*"
 php_start_tag_regex = "<\?php\s*"
 php_end_tag_regex = "\?>"
-debugging = True
+debugging = False
 
 def getPHPLines(content):
     d = ";"
@@ -63,6 +63,9 @@ class Slice:
         for sink_or_attr in self.slice_order:
             sink_or_attr.printVulnerabilities()
 
+    def printAllVulnInfo(self):
+        for sink_or_attr in self.slice_order:
+            sink_or_attr.printAllVulnInfo()
 
 
 def IsSink(line, vpattern):
@@ -91,6 +94,10 @@ class PHPatribution:
         if isinstance(self.right, Sink):
             return self.right.printVulnerabilities()
 
+    def printAllVulnInfo(self):
+        if isinstance(self.right, Sink):
+            return self.right.printAllVulnInfo()
+
     def process(self, vars, vpattern, order):
         if debugging:
             print(getVarsIntegrityLine(vars,order))
@@ -114,6 +121,8 @@ class Sink:
     def __init__(self, string, identation, vpattern):
 
         self.processed = False
+
+        self.vulnInfoList = []
         self.vulnList = []
         self.vulnerableState = -1
 
@@ -140,20 +149,33 @@ class Sink:
         for vuln in self.vulnList:
             print("X-->" + vuln[0].vulnerabilityName + " in: " + vuln[1] + "\n\tbecause of: " + vuln[2])
 
+    def printAllVulnInfo(self):
+        for info in self.vulnInfoList:
+            print(info)
+
     def process(self, vars, vpattern, order):
         self.vulnerableState = 0
 
         integrity = "high"
         for var in self.vars:
             if var.process(vars, vpattern, order) == "low":
+                varVulnPrint = getSinkPrintVuln(vpattern.vulnerabilityName, self.instructionLine, var.string, vars, order)
+                #justInjectionText = varVulnPrint.split("|")[-1].strip()
+                #self.vulnInfoList.append(justInjectionText)
                 if debugging:
-                    print(getSinkPrintVuln(vpattern.vulnerabilityName, self.instructionLine, var.string, vars, order))
+                    print(varVulnPrint)
+
                 integrity = "low"
                 self.vulnerableState = 1
                 self.vulnList.append([vpattern, self.instructionLine, var.string])
 
         if integrity =="high":
-            print(getSinkPrintClean(vpattern.vulnerabilityName,self.instructionLine, vars,order))
+            varCleanPrint = getSinkPrintClean(vpattern.vulnerabilityName,self.instructionLine, vars,order)
+            justInjectionText = varCleanPrint.split("|")[-1].strip()
+            self.vulnInfoList.append(justInjectionText)
+            if debugging:
+                print(varCleanPrint)
+
         self.processed = True
         return integrity
 

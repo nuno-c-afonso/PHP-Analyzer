@@ -90,11 +90,22 @@ try:
         for pattern in patterns:
             slices.append(Slice(path+file, content, pattern))
 
+    prev_slice_name = ""
     for slice in slices:
+        if prev_slice_name != slice.name:
+            prev_slice_name = slice.name
+            print("_"*30 + "\n")
+            print("## " + slice.name)
+
         if slice.isVulnerable():
-            print(slice.name + " | this slice is vulnerable: ")
+            #print("## " + slice.name + " | this slice is vulnerable: ")
             slice.printVulnerabilities()
-            print("\n")
+            #print("\n")
+
+        #print(" ==== NOT vulnerable parts")
+        slice.printAllVulnInfo()
+        #print("_"*30)
+
 
 except IOError:
     print("There was an error while opening the file. Please try again.")
