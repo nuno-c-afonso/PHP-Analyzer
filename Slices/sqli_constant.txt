@@ -1,3 +1,4 @@
 $idkelas=$_GET['idk'];
 $idkelas="SELECT * FROM kelas";
 $hasil_kelas=mysql_query($idkelas,$koneksi);
+
