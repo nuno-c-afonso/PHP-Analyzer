@@ -223,13 +223,13 @@ class Sink:
         return integrity
 
 
-class PhpStrings:
+class PHPstring:
     def __init__(self, string, identation, vpattern):
         self.identation = identation
         self.string = string
         self.vars = []
         if debugging:
-            print(identation * "\t" + "PhpStrings: " + string)
+            print(identation * "\t" + "PHPstring: " + string)
 
         groups = re.findall("\'\s*[a-zA-Z0-9_\$\"\(\)\[\], ]+\s*\'", string)
         groups_with_quotes = re.findall("\"\s*\.\s*[a-zA-Z0-9_\$\'\(\)\[\], ]+\s*\.\s*\"", string)
@@ -315,7 +315,7 @@ def get_rvalue_type(string, identation, vpattern):
     str = string.strip().strip(";").strip()
 
     if str.startswith('\"') and str.endswith('\"'):
-        return PhpStrings(str, identation, vpattern)
+        return PHPstring(str, identation, vpattern)
 
     for entryType in vpattern.entryPoints:
         if str.startswith(entryType):
@@ -347,7 +347,7 @@ def get_entries_in_sink(string, identation, vpattern):
         str = line.strip()
 
         if str.startswith('\"') and str.endswith('\"'):
-            vars.append(PhpStrings(str, identation, vpattern))
+            vars.append(PHPstring(str, identation, vpattern))
 
         else:
             entry = get_entry(str, identation, vpattern)
